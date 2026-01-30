@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>BMR Calculator</title>
+  <title>Health Mini App: BMR + WHR</title>
 
   <style>
     :root{
@@ -19,6 +19,10 @@
       --focus:rgba(46,166,255,.35);
       --radius:16px;
 
+      --ok: rgba(63, 215, 140, .95);
+      --warn: rgba(255, 196, 77, .95);
+      --bad: rgba(255, 92, 92, .95);
+
       color-scheme: dark;
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans";
     }
@@ -32,7 +36,7 @@
       color:var(--text);
     }
 
-    /* 🔒 стабильный фон без стыков */
+    /* стабильный фон без стыков на мобиле */
     body::before{
       content:"";
       position: fixed;
@@ -53,7 +57,7 @@
     }
 
     .card{
-      width:min(720px, 100%);
+      width:min(760px, 100%);
       background: linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,0));
       border:1px solid var(--border);
       box-shadow: var(--shadow);
@@ -62,21 +66,46 @@
     }
 
     header{
-      padding:22px 22px 14px;
+      padding:18px 22px 14px;
       border-bottom:1px solid var(--border);
       background: rgba(0,0,0,.18);
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:12px;
     }
 
-    h1{
+    .hgroup h1{
       margin:0;
       font-size:18px;
     }
-
     .subtitle{
       margin:6px 0 0;
       color:var(--muted);
       font-size:13px;
       line-height:1.35;
+    }
+
+    .tabs{
+      display:flex;
+      gap:8px;
+      margin-top:2px;
+      flex:0 0 auto;
+    }
+    .tab{
+      padding:10px 12px;
+      border-radius: 12px;
+      border:1px solid var(--border);
+      background: rgba(0,0,0,.20);
+      color: var(--muted);
+      cursor:pointer;
+      user-select:none;
+      white-space:nowrap;
+    }
+    .tab[aria-selected="true"]{
+      border-color: rgba(46,166,255,.55);
+      background: rgba(46,166,255,.14);
+      color: var(--text);
     }
 
     main{
@@ -85,9 +114,10 @@
       grid-template-columns: 1.1fr .9fr;
       gap:16px;
     }
-
     @media (max-width: 820px){
       main{ grid-template-columns: 1fr; }
+      header{ flex-direction:column; align-items:stretch; }
+      .tabs{ align-self:flex-start; }
     }
 
     .panel{
@@ -103,6 +133,8 @@
       color:var(--muted);
       font-weight:600;
     }
+
+    .hidden{ display:none !important; }
 
     label{
       display:block;
@@ -131,7 +163,6 @@
       grid-template-columns:1fr 1fr;
       gap:10px;
     }
-
     @media (max-width:480px){
       .grid{ grid-template-columns:1fr; }
     }
@@ -150,6 +181,7 @@
       background: var(--surface-2);
       color:var(--muted);
       cursor:pointer;
+      user-select:none;
     }
 
     .seg button[aria-pressed="true"]{
@@ -171,6 +203,7 @@
       background: var(--surface-2);
       color:var(--text);
       cursor:pointer;
+      user-select:none;
     }
 
     .btn.primary{
@@ -182,8 +215,6 @@
       background:rgba(255,92,92,.14);
       border-color:rgba(255,92,92,.45);
     }
-
-    /* ===== РЕЗУЛЬТАТ ===== */
 
     .metric{
       border:1px solid var(--border);
@@ -201,6 +232,7 @@
     .metric .v{
       font-size:26px;
       font-weight:700;
+      letter-spacing:.2px;
     }
 
     .metric .note{
@@ -208,6 +240,25 @@
       font-size:12px;
       color:var(--hint);
       line-height:1.35;
+    }
+
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      margin-top:10px;
+      padding:8px 10px;
+      border-radius:999px;
+      border:1px solid var(--border);
+      background: rgba(0,0,0,.22);
+      color: var(--muted);
+      font-size:12px;
+    }
+
+    .dot{
+      width:10px; height:10px; border-radius:50%;
+      background: var(--muted);
+      box-shadow: 0 0 0 3px rgba(0,0,0,.18) inset;
     }
 
     .err{
@@ -218,9 +269,11 @@
       background:rgba(255,92,92,.12);
       border:1px solid rgba(255,92,92,.45);
       font-size:12px;
+      line-height:1.35;
     }
-
     .err.show{ display:block; }
+
+    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
   </style>
 </head>
 
@@ -228,137 +281,327 @@
 <div class="wrap">
   <div class="card">
     <header>
-      <h1>BMR калькулятор</h1>
-      <p class="subtitle">
-        Базовый обмен веществ и дневная норма калорий с учётом активности
-      </p>
+      <div class="hgroup">
+        <h1>Калькуляторы: BMR + WHR</h1>
+        <p class="subtitle">BMR — базовый обмен. WHR — waist-to-hip ratio (оценка риска абдоминального ожирения).</p>
+      </div>
+
+      <div class="tabs" role="tablist" aria-label="Вкладки">
+        <button class="tab" id="tabBmr" role="tab" aria-selected="true" aria-controls="viewBmr">BMR</button>
+        <button class="tab" id="tabWhr" role="tab" aria-selected="false" aria-controls="viewWhr">Висцеральный риск (WHR)</button>
+      </div>
     </header>
 
-    <main>
-      <!-- ФОРМА -->
-      <section class="panel">
-        <h2>Данные</h2>
+    <!-- ===== VIEW: BMR ===== -->
+    <div id="viewBmr">
+      <main>
+        <section class="panel">
+          <h2>Данные</h2>
 
-        <div class="seg">
-          <button id="male" aria-pressed="true">Мужчина</button>
-          <button id="female" aria-pressed="false">Женщина</button>
-        </div>
-
-        <div class="grid">
-          <div>
-            <label>Возраст (лет)</label>
-            <input id="age" type="number">
+          <div class="seg" role="group" aria-label="Пол">
+            <button id="bmrMale" aria-pressed="true" type="button">Мужчина</button>
+            <button id="bmrFemale" aria-pressed="false" type="button">Женщина</button>
           </div>
-          <div>
-            <label>Рост (см)</label>
-            <input id="height" type="number">
+
+          <div class="grid">
+            <div>
+              <label for="bmrAge">Возраст (лет)</label>
+              <input id="bmrAge" type="number" inputmode="numeric" />
+            </div>
+            <div>
+              <label for="bmrHeight">Рост (см)</label>
+              <input id="bmrHeight" type="number" inputmode="numeric" />
+            </div>
+            <div>
+              <label for="bmrWeight">Вес (кг)</label>
+              <input id="bmrWeight" type="number" inputmode="decimal" step="0.1" />
+            </div>
+            <div>
+              <label for="bmrActivity">Активность</label>
+              <select id="bmrActivity">
+                <option value="1.2">Малоподвижный (1.2)</option>
+                <option value="1.375">1–3 тренировки (1.375)</option>
+                <option value="1.55">3–5 тренировок (1.55)</option>
+                <option value="1.725">6–7 тренировок / физ. работа (1.725)</option>
+                <option value="1.9">Физ. работа + спорт (1.9)</option>
+              </select>
+            </div>
           </div>
-          <div>
-            <label>Вес (кг)</label>
-            <input id="weight" type="number">
+
+          <div class="actions">
+            <button class="btn primary" id="bmrCalc" type="button">Рассчитать</button>
+            <button class="btn danger" id="bmrReset" type="button">Сброс</button>
           </div>
-          <div>
-            <label>Активность</label>
-            <select id="activity">
-              <option value="1.2">Малоподвижный (1.2)</option>
-              <option value="1.375">1–3 тренировки (1.375)</option>
-              <option value="1.55">3–5 тренировок (1.55)</option>
-              <option value="1.725">6–7 тренировок (1.725)</option>
-              <option value="1.9">Физ. работа + спорт (1.9)</option>
-            </select>
+
+          <div class="err" id="bmrErr" role="alert"></div>
+        </section>
+
+        <section class="panel">
+          <h2>Результат</h2>
+
+          <div class="metric">
+            <div class="k">BMR (ккал / день)</div>
+            <div class="v" id="bmrOut">—</div>
+            <div class="note">
+              Это энергия “в покое”: тело тратит её просто чтобы жить.
+            </div>
           </div>
-        </div>
 
-        <div class="actions">
-          <button class="btn primary" id="calc">Рассчитать</button>
-          <button class="btn danger" id="reset">Сброс</button>
-        </div>
+          <div style="height:10px"></div>
 
-        <div class="err" id="err"></div>
-      </section>
-
-      <!-- РЕЗУЛЬТАТ -->
-      <section class="panel">
-        <h2>Результат</h2>
-
-        <div class="metric">
-          <div class="k">BMR (ккал / день)</div>
-          <div class="v" id="bmr">—</div>
-          <div class="note">
-            Это количество энергии, которое тело тратит в полном покое —
-            просто чтобы жить и не развалиться.
+          <div class="metric">
+            <div class="k">Ккал в день при образе жизни</div>
+            <div class="v" id="tdeeOut">—</div>
+            <div class="note">
+              Это <strong>BMR × коэффициент активности</strong>. Примерная калорийность для поддержания веса.
+            </div>
           </div>
-        </div>
+        </section>
+      </main>
+    </div>
 
-        <div style="height:10px"></div>
+    <!-- ===== VIEW: WHR ===== -->
+    <div id="viewWhr" class="hidden">
+      <main>
+        <section class="panel">
+          <h2>Измерения</h2>
 
-        <div class="metric">
-          <div class="k">Ккал в день при образе жизни</div>
-          <div class="v" id="tdee">—</div>
-          <div class="note">
-            Это <strong>BMR × коэффициент активности</strong>.
-            Примерная калорийность для поддержания текущего веса.
+          <div class="seg" role="group" aria-label="Пол">
+            <button id="whrMale" aria-pressed="true" type="button">Мужчина</button>
+            <button id="whrFemale" aria-pressed="false" type="button">Женщина</button>
           </div>
-        </div>
-      </section>
-    </main>
+
+          <div class="grid">
+            <div>
+              <label for="waist">Талия (см)</label>
+              <input id="waist" type="number" inputmode="decimal" step="0.1" placeholder="например 84.5" />
+            </div>
+            <div>
+              <label for="hip">Бёдра (см)</label>
+              <input id="hip" type="number" inputmode="decimal" step="0.1" placeholder="например 98" />
+            </div>
+          </div>
+
+          <div class="actions">
+            <button class="btn primary" id="whrCalc" type="button">Рассчитать</button>
+            <button class="btn danger" id="whrReset" type="button">Сброс</button>
+          </div>
+
+          <div class="err" id="whrErr" role="alert"></div>
+        </section>
+
+        <section class="panel">
+          <h2>Результат</h2>
+
+          <div class="metric">
+            <div class="k">WHR (талия / бёдра)</div>
+            <div class="v" id="whrOut">—</div>
+            <div class="note">
+              Считается как <span class="mono">талия ÷ бёдра</span>. Это скрининг центрального (абдоминального) ожирения,
+              которое часто связано с висцеральным жиром.
+            </div>
+
+            <div class="pill" id="riskPill" style="display:none">
+              <span class="dot" id="riskDot"></span>
+              <span id="riskText">—</span>
+            </div>
+          </div>
+
+          <div style="height:10px"></div>
+
+          <div class="metric">
+            <div class="k">Порог “повышенного риска” (ВОЗ)</div>
+            <div class="v" id="whrCutoff">—</div>
+            <div class="note">
+              Мужчины: >0.90, женщины: >0.85 (абдоминальное ожирение). :contentReference[oaicite:2]{index=2}
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
   </div>
 </div>
 
 <script>
 (() => {
-  let sex = "male";
+  const $ = (id) => document.getElementById(id);
 
-  const $ = id => document.getElementById(id);
+  // Tabs
+  const tabBmr = $("tabBmr");
+  const tabWhr = $("tabWhr");
+  const viewBmr = $("viewBmr");
+  const viewWhr = $("viewWhr");
 
-  const male = $("male");
-  const female = $("female");
-
-  const age = $("age");
-  const height = $("height");
-  const weight = $("weight");
-  const activity = $("activity");
-
-  const bmrOut = $("bmr");
-  const tdeeOut = $("tdee");
-  const err = $("err");
-
-  function setSex(s){
-    sex = s;
-    male.setAttribute("aria-pressed", s==="male");
-    female.setAttribute("aria-pressed", s==="female");
+  function setTab(which){
+    const bmrOn = which === "bmr";
+    tabBmr.setAttribute("aria-selected", bmrOn ? "true" : "false");
+    tabWhr.setAttribute("aria-selected", bmrOn ? "false" : "true");
+    viewBmr.classList.toggle("hidden", !bmrOn);
+    viewWhr.classList.toggle("hidden", bmrOn);
   }
 
-  male.onclick = () => setSex("male");
-  female.onclick = () => setSex("female");
+  tabBmr.addEventListener("click", () => setTab("bmr"));
+  tabWhr.addEventListener("click", () => setTab("whr"));
 
-  $("calc").onclick = () => {
-    const a = +age.value;
-    const h = +height.value;
-    const w = +weight.value;
-    const k = +activity.value;
+  // -------------------------
+  // BMR
+  // -------------------------
+  let bmrSex = "male";
+  const bmrMale = $("bmrMale");
+  const bmrFemale = $("bmrFemale");
 
-    if(!a || !h || !w){
-      err.textContent = "Заполни все поля.";
-      err.classList.add("show");
+  const bmrAge = $("bmrAge");
+  const bmrHeight = $("bmrHeight");
+  const bmrWeight = $("bmrWeight");
+  const bmrActivity = $("bmrActivity");
+
+  const bmrOut = $("bmrOut");
+  const tdeeOut = $("tdeeOut");
+  const bmrErr = $("bmrErr");
+
+  function setBmrSex(s){
+    bmrSex = s;
+    bmrMale.setAttribute("aria-pressed", s === "male");
+    bmrFemale.setAttribute("aria-pressed", s === "female");
+  }
+
+  bmrMale.addEventListener("click", () => setBmrSex("male"));
+  bmrFemale.addEventListener("click", () => setBmrSex("female"));
+
+  function showErr(el, msg){
+    if(!msg){
+      el.textContent = "";
+      el.classList.remove("show");
+      return;
+    }
+    el.textContent = msg;
+    el.classList.add("show");
+  }
+
+  function calcBmrMifflin(sex, a, h, w){
+    const base = 10*w + 6.25*h - 5*a;
+    return sex === "male" ? (base + 5) : (base - 161);
+  }
+
+  $("bmrCalc").addEventListener("click", () => {
+    const a = Number(bmrAge.value);
+    const h = Number(bmrHeight.value);
+    const w = Number(bmrWeight.value);
+    const k = Number(bmrActivity.value);
+
+    if(!Number.isFinite(a) || !Number.isFinite(h) || !Number.isFinite(w) || a<=0 || h<=0 || w<=0){
+      showErr(bmrErr, "Заполни возраст, рост и вес корректными числами.");
+      bmrOut.textContent = "—";
+      tdeeOut.textContent = "—";
       return;
     }
 
-    err.classList.remove("show");
+    showErr(bmrErr, "");
+    const bmr = calcBmrMifflin(bmrSex, a, h, w);
+    bmrOut.textContent = String(Math.round(bmr));
+    tdeeOut.textContent = String(Math.round(bmr * k));
+  });
 
-    const base = 10*w + 6.25*h - 5*a;
-    const bmr = sex === "male" ? base + 5 : base - 161;
+  $("bmrReset").addEventListener("click", () => {
+    bmrAge.value = "";
+    bmrHeight.value = "";
+    bmrWeight.value = "";
+    bmrActivity.value = "1.2";
+    bmrOut.textContent = "—";
+    tdeeOut.textContent = "—";
+    showErr(bmrErr, "");
+    setBmrSex("male");
+  });
 
-    bmrOut.textContent = Math.round(bmr);
-    tdeeOut.textContent = Math.round(bmr * k);
-  };
+  // -------------------------
+  // WHR
+  // -------------------------
+  let whrSex = "male";
+  const whrMale = $("whrMale");
+  const whrFemale = $("whrFemale");
 
-  $("reset").onclick = () => {
-    age.value = height.value = weight.value = "";
-    activity.value = "1.2";
-    bmrOut.textContent = tdeeOut.textContent = "—";
-    err.classList.remove("show");
-  };
+  const waist = $("waist");
+  const hip = $("hip");
+
+  const whrOut = $("whrOut");
+  const whrErr = $("whrErr");
+  const riskPill = $("riskPill");
+  const riskDot = $("riskDot");
+  const riskText = $("riskText");
+  const whrCutoff = $("whrCutoff");
+
+  function setWhrSex(s){
+    whrSex = s;
+    whrMale.setAttribute("aria-pressed", s === "male");
+    whrFemale.setAttribute("aria-pressed", s === "female");
+    whrCutoff.textContent = (s === "male") ? "> 0.90" : "> 0.85";
+    // перерисуем риск, если уже посчитано
+    if(whrOut.textContent !== "—") computeWhr();
+  }
+
+  whrMale.addEventListener("click", () => setWhrSex("male"));
+  whrFemale.addEventListener("click", () => setWhrSex("female"));
+
+  function classifyRisk(sex, whr){
+    // Удобная UX-классификация (низкий/умеренный/высокий)
+    // Муж: <0.90 low; 0.90–0.99 moderate; >=1.0 high
+    // Жен: <0.80 low; 0.80–0.84 moderate; >=0.85 high
+    // (согласуется с порогом ВОЗ абдоминального ожирения: >0.90/0.85)
+    if(sex === "male"){
+      if(whr < 0.90) return { label:"Низкий риск по WHR", color:"var(--ok)" };
+      if(whr < 1.00) return { label:"Умеренный риск по WHR", color:"var(--warn)" };
+      return { label:"Высокий риск по WHR", color:"var(--bad)" };
+    }else{
+      if(whr < 0.80) return { label:"Низкий риск по WHR", color:"var(--ok)" };
+      if(whr < 0.85) return { label:"Умеренный риск по WHR", color:"var(--warn)" };
+      return { label:"Высокий риск по WHR", color:"var(--bad)" };
+    }
+  }
+
+  function computeWhr(){
+    const w = Number(waist.value);
+    const h = Number(hip.value);
+
+    if(!Number.isFinite(w) || !Number.isFinite(h) || w<=0 || h<=0){
+      showErr(whrErr, "Заполни талию и бёдра корректными числами.");
+      whrOut.textContent = "—";
+      riskPill.style.display = "none";
+      return;
+    }
+
+    // sanity, чтобы не было совсем бреда
+    if(w < 40 || w > 200 || h < 40 || h > 220){
+      showErr(whrErr, "Значения выглядят странно. Проверь сантиметры.");
+      whrOut.textContent = "—";
+      riskPill.style.display = "none";
+      return;
+    }
+
+    showErr(whrErr, "");
+    const whr = w / h;
+    whrOut.textContent = whr.toFixed(2);
+
+    const cls = classifyRisk(whrSex, whr);
+    riskText.textContent = cls.label;
+    riskDot.style.background = cls.color;
+    riskPill.style.display = "inline-flex";
+  }
+
+  $("whrCalc").addEventListener("click", computeWhr);
+
+  $("whrReset").addEventListener("click", () => {
+    waist.value = "";
+    hip.value = "";
+    whrOut.textContent = "—";
+    riskPill.style.display = "none";
+    showErr(whrErr, "");
+    setWhrSex("male");
+  });
+
+  // Init
+  setTab("bmr");
+  setBmrSex("male");
+  setWhrSex("male");
 })();
 </script>
 </body>

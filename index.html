@@ -4,6 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>BMR Calculator</title>
+
   <style>
     :root{
       --bg:#0b0c10;
@@ -19,23 +20,29 @@
       --focus:rgba(46,166,255,.35);
       --radius:16px;
 
-      --good: rgba(63, 215, 140, .9);
-      --warn: rgba(255, 196, 77, .95);
-      --bad:  rgba(255, 92, 92, .95);
-
       color-scheme: dark;
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans";
     }
 
     *{ box-sizing:border-box; }
     html, body{ height:100%; }
+
+    /* 🔥 ФИКС ГРАДИЕНТА */
     body{
       margin:0;
+      background: var(--bg);
+      color:var(--text);
+    }
+
+    body::before{
+      content:"";
+      position: fixed;
+      inset: 0;
+      z-index: -1;
       background:
         radial-gradient(900px 600px at 15% 0%, rgba(46,166,255,.14), transparent 60%),
-        radial-gradient(900px 600px at 85% 0%, rgba(140, 90, 255,.12), transparent 60%),
+        radial-gradient(900px 600px at 85% 0%, rgba(140,90,255,.12), transparent 60%),
         var(--bg);
-      color:var(--text);
     }
 
     .wrap{
@@ -48,7 +55,7 @@
 
     .card{
       width:min(720px, 100%);
-      background: linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,.0));
+      background: linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,0));
       border:1px solid var(--border);
       box-shadow: var(--shadow);
       border-radius: calc(var(--radius) + 6px);
@@ -61,11 +68,11 @@
       background: rgba(0,0,0,.18);
     }
 
-    .title{
+    h1{
       margin:0;
       font-size:18px;
-      letter-spacing:.2px;
     }
+
     .subtitle{
       margin:6px 0 0;
       color:var(--muted);
@@ -96,68 +103,60 @@
       font-size:14px;
       color:var(--muted);
       font-weight:600;
-      letter-spacing:.2px;
-    }
-
-    .grid{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap:10px;
-    }
-    @media (max-width: 480px){
-      .grid{ grid-template-columns: 1fr; }
     }
 
     label{
       display:block;
       font-size:12px;
       color:var(--muted);
-      margin:0 0 6px;
+      margin-bottom:6px;
     }
 
     input, select{
       width:100%;
-      padding:12px 12px;
-      border-radius: 12px;
+      padding:12px;
+      border-radius:12px;
       border:1px solid var(--border);
       background: var(--surface);
-      color: var(--text);
-      outline: none;
-      transition: border-color .15s, box-shadow .15s, transform .05s;
+      color:var(--text);
     }
 
     input:focus, select:focus{
-      border-color: rgba(46,166,255,.55);
-      box-shadow: 0 0 0 4px var(--focus);
+      outline:none;
+      border-color:rgba(46,166,255,.55);
+      box-shadow:0 0 0 4px var(--focus);
     }
 
-    .row{
-      display:flex;
+    .grid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
       gap:10px;
-      align-items:center;
+    }
+
+    @media (max-width:480px){
+      .grid{ grid-template-columns:1fr; }
     }
 
     .seg{
       display:flex;
       gap:8px;
+      margin-bottom:10px;
     }
 
     .seg button{
       flex:1;
-      padding:11px 10px;
-      border-radius: 12px;
+      padding:11px;
+      border-radius:12px;
       border:1px solid var(--border);
       background: var(--surface-2);
-      color: var(--muted);
+      color:var(--muted);
       cursor:pointer;
-      transition: transform .05s, border-color .15s, color .15s, background .15s;
-      user-select:none;
     }
-    .seg button:active{ transform: translateY(1px); }
+
     .seg button[aria-pressed="true"]{
-      border-color: rgba(46,166,255,.55);
-      background: rgba(46,166,255,.14);
-      color: var(--text);
+      border-color:rgba(46,166,255,.55);
+      background:rgba(46,166,255,.14);
+      color:var(--text);
     }
 
     .actions{
@@ -167,28 +166,22 @@
     }
 
     .btn{
-      border-radius: 12px;
+      padding:11px;
+      border-radius:12px;
       border:1px solid var(--border);
-      padding:11px 12px;
       background: var(--surface-2);
-      color: var(--text);
+      color:var(--text);
       cursor:pointer;
-      transition: transform .05s, border-color .15s, background .15s;
-      user-select:none;
-    }
-    .btn:active{ transform: translateY(1px); }
-    .btn.primary{
-      background: linear-gradient(180deg, rgba(46,166,255,.22), rgba(46,166,255,.10));
-      border-color: rgba(46,166,255,.55);
-    }
-    .btn.danger{
-      background: linear-gradient(180deg, rgba(255,92,92,.18), rgba(255,92,92,.08));
-      border-color: rgba(255,92,92,.45);
     }
 
-    .result{
-      display:grid;
-      gap:10px;
+    .btn.primary{
+      background:rgba(46,166,255,.18);
+      border-color:rgba(46,166,255,.55);
+    }
+
+    .btn.danger{
+      background:rgba(255,92,92,.14);
+      border-color:rgba(255,92,92,.45);
     }
 
     .metric{
@@ -197,303 +190,165 @@
       background: rgba(0,0,0,.20);
       padding:14px;
     }
+
     .metric .k{
       font-size:12px;
       color:var(--muted);
-      margin:0 0 6px;
+      margin-bottom:6px;
     }
+
     .metric .v{
       font-size:26px;
       font-weight:700;
-      letter-spacing:.2px;
-      margin:0;
-    }
-    .metric .note{
-      margin:6px 0 0;
-      color:var(--hint);
-      font-size:12px;
-      line-height:1.35;
-    }
-
-    .badge{
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      padding:8px 10px;
-      border-radius: 999px;
-      border:1px solid var(--border);
-      background: rgba(0,0,0,.22);
-      color:var(--muted);
-      font-size:12px;
-      margin-top:8px;
     }
 
     .err{
       display:none;
       margin-top:10px;
-      padding:10px 12px;
-      border-radius: 12px;
+      padding:10px;
+      border-radius:12px;
+      background:rgba(255,92,92,.12);
       border:1px solid rgba(255,92,92,.45);
-      background: rgba(255,92,92,.10);
-      color: rgba(255, 200, 200, .95);
       font-size:12px;
-      line-height:1.35;
     }
+
     .err.show{ display:block; }
 
     footer{
       padding:14px 22px 18px;
       border-top:1px solid var(--border);
-      color:var(--hint);
       font-size:12px;
-      line-height:1.35;
+      color:var(--hint);
     }
-
-    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
   </style>
 </head>
+
 <body>
 <div class="wrap">
-  <div class="card" role="application" aria-label="BMR Calculator">
+  <div class="card">
     <header>
-      <h1 class="title">BMR калькулятор</h1>
-      <p class="subtitle">
-        Считает базовый обмен (BMR) по формуле <span class="mono">Mifflin–St Jeor</span> и дневную норму калорий с учётом активности.
-      </p>
+      <h1>BMR калькулятор</h1>
+      <p class="subtitle">BMR + дневная норма калорий с учётом активности</p>
     </header>
 
     <main>
-      <section class="panel" aria-label="Форма">
+      <section class="panel">
         <h2>Данные</h2>
 
-        <div class="seg" role="group" aria-label="Пол">
-          <button id="sexMale" type="button" aria-pressed="true">Мужчина</button>
-          <button id="sexFemale" type="button" aria-pressed="false">Женщина</button>
+        <div class="seg">
+          <button id="male" aria-pressed="true">Мужчина</button>
+          <button id="female" aria-pressed="false">Женщина</button>
         </div>
-
-        <div style="height:10px"></div>
 
         <div class="grid">
           <div>
-            <label for="age">Возраст (лет)</label>
-            <input id="age" type="number" inputmode="numeric" min="10" max="120" placeholder="например 33" />
+            <label>Возраст</label>
+            <input id="age" type="number">
           </div>
           <div>
-            <label for="height">Рост (см)</label>
-            <input id="height" type="number" inputmode="numeric" min="120" max="230" placeholder="например 165" />
+            <label>Рост (см)</label>
+            <input id="height" type="number">
           </div>
           <div>
-            <label for="weight">Вес (кг)</label>
-            <input id="weight" type="number" inputmode="decimal" min="25" max="300" step="0.1" placeholder="например 70.5" />
+            <label>Вес (кг)</label>
+            <input id="weight" type="number">
           </div>
           <div>
-            <label for="activity">Активность</label>
+            <label>Активность</label>
             <select id="activity">
-              <option value="1.2">Малоподвижный образ жизни (1.2)</option>
-              <option value="1.375">Тренировки 1–3 раза в неделю (1.375)</option>
-              <option value="1.55">Тренировки 3–5 раз в неделю (1.55)</option>
-              <option value="1.725">Физическая работа / тренировки 6–7 раз в неделю (1.725)</option>
-              <option value="1.9">Физическая работа + спорт (1.9)</option>
+              <option value="1.2">Малоподвижный (1.2)</option>
+              <option value="1.375">1–3 тренировки (1.375)</option>
+              <option value="1.55">3–5 тренировок (1.55)</option>
+              <option value="1.725">6–7 тренировок (1.725)</option>
+              <option value="1.9">Физ. работа + спорт (1.9)</option>
             </select>
           </div>
         </div>
 
         <div class="actions">
-          <button id="recalc" class="btn primary" type="button">Рассчитать</button>
-          <button id="reset" class="btn danger" type="button">Сброс</button>
+          <button class="btn primary" id="calc">Рассчитать</button>
+          <button class="btn danger" id="reset">Сброс</button>
         </div>
 
-        <div id="err" class="err" role="alert"></div>
+        <div class="err" id="err"></div>
       </section>
 
-      <section class="panel" aria-label="Результат">
+      <section class="panel">
         <h2>Результат</h2>
 
-        <div class="result">
-          <div class="metric">
-            <p class="k">BMR (ккал/день)</p>
-            <p class="v" id="bmrOut">—</p>
-            <p class="note">Это “в покое”. То, сколько твоё тело тратит без учёта активности.</p>
-          </div>
+        <div class="metric">
+          <div class="k">BMR</div>
+          <div class="v" id="bmr">—</div>
+        </div>
 
-          <div class="metric">
-            <p class="k">Ккал в день при образе жизни (TDEE)</p>
-            <p class="v" id="tdeeOut">—</p>
-            <p class="note">Это <span class="mono">BMR × коэффициент</span>. Приблизительная поддержка веса.</p>
+        <div style="height:10px"></div>
 
-            <div class="badge" id="coefBadge" title="Текущий коэффициент активности">
-              Коэффициент: <span class="mono" id="coefOut">—</span>
-            </div>
-          </div>
+        <div class="metric">
+          <div class="k">Ккал в день</div>
+          <div class="v" id="tdee">—</div>
         </div>
       </section>
     </main>
 
-    
+    <footer>
+      Все значения приблизительные. Корректируй по факту.
+    </footer>
   </div>
 </div>
 
 <script>
 (() => {
-  const $ = (id) => document.getElementById(id);
+  let sex = "male";
 
-  const sexMale = $("sexMale");
-  const sexFemale = $("sexFemale");
+  const $ = id => document.getElementById(id);
+
+  const male = $("male");
+  const female = $("female");
+
   const age = $("age");
   const height = $("height");
   const weight = $("weight");
   const activity = $("activity");
 
-  const bmrOut = $("bmrOut");
-  const tdeeOut = $("tdeeOut");
-  const coefOut = $("coefOut");
-
+  const bmrOut = $("bmr");
+  const tdeeOut = $("tdee");
   const err = $("err");
-  const recalcBtn = $("recalc");
-  const resetBtn = $("reset");
 
-  const STORAGE_KEY = "bmr_app_state_v1";
+  function setSex(s){
+    sex = s;
+    male.setAttribute("aria-pressed", s==="male");
+    female.setAttribute("aria-pressed", s==="female");
+  }
 
-  const state = {
-    sex: "male", // male | female
-    age: "",
-    height: "",
-    weight: "",
-    activity: "1.2"
+  male.onclick = () => setSex("male");
+  female.onclick = () => setSex("female");
+
+  $("calc").onclick = () => {
+    const a = +age.value;
+    const h = +height.value;
+    const w = +weight.value;
+    const k = +activity.value;
+
+    if(!a || !h || !w){
+      err.textContent = "Заполни все поля.";
+      err.classList.add("show");
+      return;
+    }
+
+    err.classList.remove("show");
+
+    const base = 10*w + 6.25*h - 5*a;
+    const bmr = sex === "male" ? base + 5 : base - 161;
+
+    bmrOut.textContent = Math.round(bmr);
+    tdeeOut.textContent = Math.round(bmr * k);
   };
 
-  function setSex(next){
-    state.sex = next;
-    sexMale.setAttribute("aria-pressed", next === "male" ? "true" : "false");
-    sexFemale.setAttribute("aria-pressed", next === "female" ? "true" : "false");
-    persist();
-    compute();
-  }
-
-  function showError(msg){
-    if(!msg){
-      err.textContent = "";
-      err.classList.remove("show");
-      return;
-    }
-    err.textContent = msg;
-    err.classList.add("show");
-  }
-
-  function roundInt(x){
-    return Math.round(x);
-  }
-
-  function parseNum(v){
-    const n = Number(String(v).replace(",", "."));
-    return Number.isFinite(n) ? n : NaN;
-  }
-
-  function validateInputs(){
-    const a = parseNum(age.value);
-    const h = parseNum(height.value);
-    const w = parseNum(weight.value);
-    const k = parseNum(activity.value);
-
-    if(!Number.isFinite(a) || a <= 0) return { ok:false, msg:"Введи нормальный возраст (числом)." };
-    if(!Number.isFinite(h) || h <= 0) return { ok:false, msg:"Введи рост в сантиметрах (числом)." };
-    if(!Number.isFinite(w) || w <= 0) return { ok:false, msg:"Введи вес в килограммах (числом)." };
-    if(!Number.isFinite(k) || k <= 0) return { ok:false, msg:"Выбери активность (коэффициент)." };
-
-    // мягкие sanity-check'и
-    if(a < 10 || a > 120) return { ok:false, msg:"Возраст выглядит подозрительно. Исправь (10–120)." };
-    if(h < 120 || h > 230) return { ok:false, msg:"Рост выглядит подозрительно. Исправь (120–230 см)." };
-    if(w < 25 || w > 300) return { ok:false, msg:"Вес выглядит подозрительно. Исправь (25–300 кг)." };
-
-    return { ok:true, a, h, w, k };
-  }
-
-  function calcBMR(sex, a, h, w){
-    // Mifflin–St Jeor
-    const base = 10*w + 6.25*h - 5*a;
-    return sex === "male" ? (base + 5) : (base - 161);
-  }
-
-  function compute(){
-    coefOut.textContent = activity.value;
-
-    const v = validateInputs();
-    if(!v.ok){
-      showError(v.msg);
-      bmrOut.textContent = "—";
-      tdeeOut.textContent = "—";
-      return;
-    }
-
-    showError("");
-    const bmr = calcBMR(state.sex, v.a, v.h, v.w);
-    const tdee = bmr * v.k;
-
-    bmrOut.textContent = roundInt(bmr).toString();
-    tdeeOut.textContent = roundInt(tdee).toString();
-  }
-
-  function persist(){
-    state.age = age.value;
-    state.height = height.value;
-    state.weight = weight.value;
-    state.activity = activity.value;
-
-    try{
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    }catch(e){
-      // если localStorage недоступен — молчим
-    }
-  }
-
-  function restore(){
-    try{
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if(!raw) return;
-      const saved = JSON.parse(raw);
-      if(saved && typeof saved === "object"){
-        if(saved.sex === "male" || saved.sex === "female") state.sex = saved.sex;
-        if(saved.age != null) state.age = String(saved.age);
-        if(saved.height != null) state.height = String(saved.height);
-        if(saved.weight != null) state.weight = String(saved.weight);
-        if(saved.activity != null) state.activity = String(saved.activity);
-      }
-    }catch(e){}
-
-    age.value = state.age;
-    height.value = state.height;
-    weight.value = state.weight;
-    activity.value = state.activity;
-
-    setSex(state.sex);
-  }
-
-  // Events
-  sexMale.addEventListener("click", () => setSex("male"));
-  sexFemale.addEventListener("click", () => setSex("female"));
-
-  [age, height, weight].forEach(inp => {
-    inp.addEventListener("input", () => { persist(); compute(); });
-    inp.addEventListener("blur", () => { persist(); compute(); });
-  });
-
-  activity.addEventListener("change", () => { persist(); compute(); });
-
-  recalcBtn.addEventListener("click", () => compute());
-
-  resetBtn.addEventListener("click", () => {
-    age.value = "";
-    height.value = "";
-    weight.value = "";
+  $("reset").onclick = () => {
+    age.value = height.value = weight.value = "";
     activity.value = "1.2";
-    setSex("male");
-    persist();
-    compute();
-  });
-
-  // Init
-  restore();
-  compute();
+    bmrOut.textContent = tdeeOut.textContent = "—";
+  };
 })();
 </script>
 </body>

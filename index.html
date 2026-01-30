@@ -16,7 +16,6 @@
       --border:rgba(231,234,240,.12);
       --shadow:0 10px 30px rgba(0,0,0,.35);
       --primary:#2ea6ff;
-      --primaryText:#ffffff;
       --focus:rgba(46,166,255,.35);
       --radius:16px;
 
@@ -27,13 +26,13 @@
     *{ box-sizing:border-box; }
     html, body{ height:100%; }
 
-    /* 🔥 ФИКС ГРАДИЕНТА */
     body{
       margin:0;
       background: var(--bg);
       color:var(--text);
     }
 
+    /* 🔒 стабильный фон без стыков */
     body::before{
       content:"";
       position: fixed;
@@ -184,6 +183,8 @@
       border-color:rgba(255,92,92,.45);
     }
 
+    /* ===== РЕЗУЛЬТАТ ===== */
+
     .metric{
       border:1px solid var(--border);
       border-radius: var(--radius);
@@ -202,6 +203,13 @@
       font-weight:700;
     }
 
+    .metric .note{
+      margin-top:6px;
+      font-size:12px;
+      color:var(--hint);
+      line-height:1.35;
+    }
+
     .err{
       display:none;
       margin-top:10px;
@@ -213,13 +221,6 @@
     }
 
     .err.show{ display:block; }
-
-    footer{
-      padding:14px 22px 18px;
-      border-top:1px solid var(--border);
-      font-size:12px;
-      color:var(--hint);
-    }
   </style>
 </head>
 
@@ -228,10 +229,13 @@
   <div class="card">
     <header>
       <h1>BMR калькулятор</h1>
-      <p class="subtitle">BMR + дневная норма калорий с учётом активности</p>
+      <p class="subtitle">
+        Базовый обмен веществ и дневная норма калорий с учётом активности
+      </p>
     </header>
 
     <main>
+      <!-- ФОРМА -->
       <section class="panel">
         <h2>Данные</h2>
 
@@ -242,7 +246,7 @@
 
         <div class="grid">
           <div>
-            <label>Возраст</label>
+            <label>Возраст (лет)</label>
             <input id="age" type="number">
           </div>
           <div>
@@ -273,23 +277,31 @@
         <div class="err" id="err"></div>
       </section>
 
+      <!-- РЕЗУЛЬТАТ -->
       <section class="panel">
         <h2>Результат</h2>
 
         <div class="metric">
-          <div class="k">BMR</div>
+          <div class="k">BMR (ккал / день)</div>
           <div class="v" id="bmr">—</div>
+          <div class="note">
+            Это количество энергии, которое тело тратит в полном покое —
+            просто чтобы жить и не развалиться.
+          </div>
         </div>
 
         <div style="height:10px"></div>
 
         <div class="metric">
-          <div class="k">Ккал в день</div>
+          <div class="k">Ккал в день при образе жизни</div>
           <div class="v" id="tdee">—</div>
+          <div class="note">
+            Это <strong>BMR × коэффициент активности</strong>.
+            Примерная калорийность для поддержания текущего веса.
+          </div>
         </div>
       </section>
     </main>
-
   </div>
 </div>
 
@@ -345,6 +357,7 @@
     age.value = height.value = weight.value = "";
     activity.value = "1.2";
     bmrOut.textContent = tdeeOut.textContent = "—";
+    err.classList.remove("show");
   };
 })();
 </script>
